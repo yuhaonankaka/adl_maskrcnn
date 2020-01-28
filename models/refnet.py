@@ -1,8 +1,12 @@
+import warnings
+
 import torch
 import torch.nn as nn
 import numpy as np
 import sys
 import os
+
+from utils.projection import Projection
 
 sys.path.append(os.path.join(os.getcwd(), "lib")) # HACK add the lib folder
 from models.backbone_module import Pointnet2Backbone
@@ -13,7 +17,6 @@ from models.ref_module import RefModule
 class RefNet(nn.Module):
     def __init__(self, num_class, num_heading_bin, num_size_cluster, mean_size_arr, input_feature_dim=0, num_proposal=128, vote_factor=1, sampling="vote_fps", use_lang_classifier=True):
         super().__init__()
-
         self.num_class = num_class
         self.num_heading_bin = num_heading_bin
         self.num_size_cluster = num_size_cluster
@@ -54,6 +57,11 @@ class RefNet(nn.Module):
         """
 
         batch_size = data_dict["point_clouds"].shape[0]
+        dtype1 = data_dict['point_clouds'].dtype
+        dtype2 = data_dict['new_features'].dtype
+        pcl_enriched = torch.cat((data_dict['point_clouds'], data_dict['new_features']), dim=2)
+        data_dict['point_clouds'] = pcl_enriched
+
 
         data_dict = self.backbone_net(data_dict)
                 

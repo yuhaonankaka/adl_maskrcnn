@@ -42,7 +42,7 @@ def get_dataloader(args, scanrefer, all_scene_list, split, config, augment):
 
 def get_model(args):
     # initiate model
-    input_channels = int(args.use_multiview) * 128 + int(args.use_normal) * 3 + int(args.use_color) * 3 + int(not args.no_height)
+    input_channels = int(args.use_online)*256 + int(args.use_multiview) * 128 + int(args.use_normal) * 3 + int(args.use_color) * 3 + int(not args.no_height)
     model = RefNet(
         num_class=DC.num_class,
         num_heading_bin=DC.num_heading_bin,
@@ -50,7 +50,7 @@ def get_model(args):
         mean_size_arr=DC.mean_size_arr,
         num_proposal=args.num_proposals,
         input_feature_dim=input_channels,
-        use_lang_classifier=(not args.no_lang_cls)
+        use_lang_classifier=(not args.no_lang_cls),
     ).cuda()
 
     return model
@@ -65,7 +65,7 @@ def get_solver(args, dataloader, stamp):
     model = get_model(args)
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
     lang_cls_flag = not args.no_lang_cls
-    solver = Solver(model, DC, dataloader, optimizer, stamp, args.val_step, lang_cls_flag, (not args.no_max_iou))
+    solver = Solver(model, DC, dataloader, optimizer, stamp, args.val_step, lang_cls_flag, (not args.no_max_iou), args)
     num_params = get_num_params(model)
 
     return solver, num_params
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--tag", type=str, help="tag for the training, e.g. cuda_wl", default="")
     parser.add_argument("--gpu", type=str, help="gpu", default="0")
-    parser.add_argument("--batch_size", type=int, help="batch size", default=8)
+    parser.add_argument("--batch_size", type=int, help="batch size", default=2)
     parser.add_argument("--epoch", type=int, help="number of epochs", default=10)
     parser.add_argument("--verbose", type=int, help="iterations of showing verbose", default=1)
     parser.add_argument("--val_step", type=int, help="iterations of validating", default=5000)
@@ -157,6 +157,27 @@ if __name__ == "__main__":
     parser.add_argument('--use_color', action='store_true', help='Use RGB color in input.')
     parser.add_argument('--use_normal', action='store_true', help='Use RGB color in input.')
     parser.add_argument('--use_multiview', action='store_true', help='Use multiview images.')
+    parser.add_argument('--use_online', action='store_false', help='Use online images.')
+    # =================
+    # 3DMV
+    # =================
+    parser.add_argument('--data_path_2d', default='/home/haonan/PycharmProjects/mask-rcnn-for-indoor-objects/data/rawdata', help='path to 2d train data')
+    parser.add_argument('--num_classes', default=18, help='#classes')
+    parser.add_argument('--num_nearest_images', type=int, default=50, help='#images')
+    parser.add_argument('--model2d_type', default='scannet', help='which enet (scannet)')
+    parser.add_argument('--model2d_path', default='./2d_scannet.pth', help='path to enet model')
+    parser.add_argument('--use_proxy_loss', dest='use_proxy_loss', action='store_true')
+    # 2d/3d
+    parser.add_argument('--depth_min', type=float, default=0.4, help='min depth (in meters)')
+    parser.add_argument('--depth_max', type=float, default=4.0, help='max depth (in meters)')
+    # scannet intrinsic params
+    parser.add_argument('--intrinsic_image_width', type=int, default=640, help='2d image width')
+    parser.add_argument('--intrinsic_image_height', type=int, default=480, help='2d image height')
+    RAW_DATA_DIR = '/home/haonan/PycharmProjects/ScanRefer/data/scans/'
+    parser.add_argument('--RAW_DATA_DIR', default=RAW_DATA_DIR)
+    parser.add_argument('--voxel_size', type=float, default=0.05, help='voxel size (in meters)')
+
+
     args = parser.parse_args()
 
     # setting

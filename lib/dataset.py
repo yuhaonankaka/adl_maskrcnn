@@ -121,37 +121,37 @@ class ScannetReferenceDataset(Dataset):
         target_bboxes[0:num_bbox,:] = instance_bboxes[:MAX_NUM_OBJ,0:6]
         
         # ------------------------------- DATA AUGMENTATION ------------------------------        
-        if self.augment and not self.debug:
-            if np.random.random() > 0.5:
-                # Flipping along the YZ plane
-                point_cloud[:,0] = -1 * point_cloud[:,0]
-                target_bboxes[:,0] = -1 * target_bboxes[:,0]                
-                
-            if np.random.random() > 0.5:
-                # Flipping along the XZ plane
-                point_cloud[:,1] = -1 * point_cloud[:,1]
-                target_bboxes[:,1] = -1 * target_bboxes[:,1]                                
-
-            # Rotation along X-axis
-            rot_angle = (np.random.random()*np.pi/18) - np.pi/36 # -5 ~ +5 degree
-            rot_mat = rotx(rot_angle)
-            point_cloud[:,0:3] = np.dot(point_cloud[:,0:3], np.transpose(rot_mat))
-            target_bboxes = rotate_aligned_boxes_along_axis(target_bboxes, rot_mat, "x")
-
-            # Rotation along Y-axis
-            rot_angle = (np.random.random()*np.pi/18) - np.pi/36 # -5 ~ +5 degree
-            rot_mat = roty(rot_angle)
-            point_cloud[:,0:3] = np.dot(point_cloud[:,0:3], np.transpose(rot_mat))
-            target_bboxes = rotate_aligned_boxes_along_axis(target_bboxes, rot_mat, "y")
-
-            # Rotation along up-axis/Z-axis
-            rot_angle = (np.random.random()*np.pi/18) - np.pi/36 # -5 ~ +5 degree
-            rot_mat = rotz(rot_angle)
-            point_cloud[:,0:3] = np.dot(point_cloud[:,0:3], np.transpose(rot_mat))
-            target_bboxes = rotate_aligned_boxes_along_axis(target_bboxes, rot_mat, "z")
-
-            # Translation
-            point_cloud, target_bboxes = self._translate(point_cloud, target_bboxes)
+        # if self.augment and not self.debug:
+        #     if np.random.random() > 0.5:
+        #         # Flipping along the YZ plane
+        #         point_cloud[:,0] = -1 * point_cloud[:,0]
+        #         target_bboxes[:,0] = -1 * target_bboxes[:,0]
+        #
+        #     if np.random.random() > 0.5:
+        #         # Flipping along the XZ plane
+        #         point_cloud[:,1] = -1 * point_cloud[:,1]
+        #         target_bboxes[:,1] = -1 * target_bboxes[:,1]
+        #
+        #     # Rotation along X-axis
+        #     rot_angle = (np.random.random()*np.pi/18) - np.pi/36 # -5 ~ +5 degree
+        #     rot_mat = rotx(rot_angle)
+        #     point_cloud[:,0:3] = np.dot(point_cloud[:,0:3], np.transpose(rot_mat))
+        #     target_bboxes = rotate_aligned_boxes_along_axis(target_bboxes, rot_mat, "x")
+        #
+        #     # Rotation along Y-axis
+        #     rot_angle = (np.random.random()*np.pi/18) - np.pi/36 # -5 ~ +5 degree
+        #     rot_mat = roty(rot_angle)
+        #     point_cloud[:,0:3] = np.dot(point_cloud[:,0:3], np.transpose(rot_mat))
+        #     target_bboxes = rotate_aligned_boxes_along_axis(target_bboxes, rot_mat, "y")
+        #
+        #     # Rotation along up-axis/Z-axis
+        #     rot_angle = (np.random.random()*np.pi/18) - np.pi/36 # -5 ~ +5 degree
+        #     rot_mat = rotz(rot_angle)
+        #     point_cloud[:,0:3] = np.dot(point_cloud[:,0:3], np.transpose(rot_mat))
+        #     target_bboxes = rotate_aligned_boxes_along_axis(target_bboxes, rot_mat, "z")
+        #
+        #     # Translation
+        #     point_cloud, target_bboxes = self._translate(point_cloud, target_bboxes)
 
         # compute votes *AFTER* augmentation
         # generate votes
@@ -190,6 +190,7 @@ class ScannetReferenceDataset(Dataset):
                 ref_size_residual_label = size_residuals[i]
             
         data_dict = {}
+        data_dict['scan_name'] = scene_id
         data_dict["point_clouds"] = point_cloud.astype(np.float32) # point cloud data including features
         data_dict["lang_feat"] = lang_feat.astype(np.float32) # language feature vectors
         data_dict["lang_len"] = np.array(lang_len).astype(np.int64) # length of each description
